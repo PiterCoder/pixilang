@@ -1,0 +1,298 @@
+rand_seed( get_ticks() )
+
+colMap=new(4)
+colMap[0]=BLACK
+colMap[1]=RED
+colMap[2]=YELLOW
+colMap[3]=BLUE
+
+g0x=WINDOW_XSIZE/(-2)
+g0y=WINDOW_YSIZE/(-2)
+
+polX=32
+polY=32
+pole=new(polX,polY,INT)
+initPol()
+
+cb=10
+dnk=36
+brain=new(cb,dnk+1,INT)//1-angl
+botIni()
+live=0
+c=0
+while(1){
+    clear(BLACK)
+
+    printPol(0,-300,20)
+
+    
+    live=0
+    c=0
+    while(c<cb){
+        live=live+vm(c)
+        view(c,g0x+140*(c/5),g0y+150*(c%5))
+        c=c+1
+    }
+    if(live<8){nextEpox()}
+    frame(1)
+}
+
+fn nextEpox(){
+    clear(RED)
+    fraim(100)
+    tbot=new(live,dnk+1)
+    $c=0
+    $i=0
+    while($i<cb){
+        if(brain[i,2]>0){
+            $j=0
+            while($j<dnk+1){
+                tbot[$c,$j]=brain[$i,$j]
+                $j=$j+1
+            }
+            $c=$c+1
+        }
+        $i=$i+1
+    }
+    $i=0
+    $c=0
+    while($i<cb){
+        $j=0
+        while($j<dnk+1){
+            brain[$i,$j]=tbot[$c%live,$j]
+            $j=$j+1
+            $c=$c+1
+        }
+        brain[$i,(rand()%(dnk-4))+4]=rand()%32
+         brain[$i,0]=rand()%(polX-2)+1
+         brain[$i,1]=rand()%(polY-2)+1
+         pole[brain[$i,0],brain[$i,1]]=2
+         brain[$i,2]=100
+         brain[$i,3]=0
+    }
+
+    initPol()
+}
+
+/*
+0-ничего
+1-шаг в верх
+2-шаг в низ
+3-шаг в лево
+4-шаг в верх
+
+что там?
+Условный переход смещением указателя
++1-стена
++2-робот
++3-еда
++4-ничего
+
+5-что с верху
+6-что с низу
+7-что с лева
+8-что с права
+
+9-сьесть в верх
+10-сьесть в низ
+11-сьесть в лево
+12-сьесть в прпво
+
+13-повернуть
+осисльные коды переход на адрес кода
+*/
+
+fn vm($n){
+    if(brain[$n,2]==0){
+        pole[brain[$n,0],brain[$n,1]]=0
+        ret(0)
+    }
+
+    $com=brain[$n,4+brain[$n,3]]
+/*
+    if($com>18){
+        brain[$n,3]=brain[$n,3]+$com
+        if(brain[$n,3]>=dnk-4){
+            brain[$n,3]=0
+        }
+        ret(1)
+    }
+*/
+
+    if($com>=13&&$com<=18){
+        brain[$n,dnk]=(brain[$n,dnk]+1)%4
+        brain[$n,3]=brain[$n,3]+1
+        if(brain[$n,3]>=dnk-4){
+            brain[$n,3]=0
+        }
+       
+        ret(1)
+    }
+
+    if($com>=5&&$com<=8){
+        $t=new(2)
+        $t[0]=brain[$n,0]
+        $t[1]=brain[$n,1]
+        $t = mv($t,$com-4,brain[$n,dnk])
+        $l=pole[$t[х],$t[1]]
+        if($l==0){brain[$n,3]=brain[$n,3]+4}
+        if($l>=1&&$l<=3){brain[$n,3]=brain[$n,3]+$l}
+        
+        ret(1)
+    }
+
+
+/*
+    if($com>=9&&$com<=12){
+        $t=new(2)
+        $t[0]=brain[$n,0]
+        $t[1]=brain[$n,1]
+        $t = mv($t,$com-8,brain[$n,dnk])
+        if(pole[$t[0],$t[1]]==3){
+            brain[$n,2]=brain[$n,2]+10
+            pole[$t[0],$t[1]]=0
+            $com=$com-8
+            //clear(RED)
+            //fraim(100)
+        }
+        else{
+            brain[$n,2]=brain[$n,2]-1
+            brain[$n,3]=brain[$n,3]+1
+            if(brain[$n,3]>=dnk-4){
+                brain[$n,3]=0
+            }
+            
+            ret(0)
+        }
+    }*/
+
+    if($com>=1&&$com<=4){
+        $t=new(2)
+        $t[0]=brain[$n,0]
+        $t[1]=brain[$n,1]
+        $t = mv($t,$com,brain[$n,dnk])
+        if(pole[$t[0],$t[1]]==0){
+             pole[$t[0],$t[1]]=2
+             pole[brain[$n,0],brain[$n,1]]=0
+             brain[$n,0]=$t[0]
+             brain[$n,1]=$t[1]
+             brain[$n,2]=brain[$n,2]-1
+        }
+        
+    }
+    brain[$n,3]=brain[$n,3]+1
+    if(brain[$n,3]>=dnk-4){
+        brain[$n,3]=0
+    }
+    ret(1)
+}
+
+
+fn mv($inp,$fo,$look){
+    $fo=(($fo-1)+$look)%4+1
+    if $fo==1{$inp[0]=$inp[0]-1}
+    if $fo==2{$inp[0]=$inp[0]+1}
+    if $fo==3{$inp[1]=$inp[1]-1}
+    if $fo==4{$inp[1]=$inp[1]+1}
+    ret($inp)
+}
+
+
+
+
+/*
+0-воздух
+1-стена
+2-робор
+3-еда
+*/
+fn initPol(){
+    $i=0
+    while($i<polX){
+        $j=0
+        while ($j<polY){
+            pole[$i,$j]=0
+            if($j==0||$j==polY-1){pole[$i,$j]=1} else{
+            if($i==0||$i==polX-1){pole[$i,$j]=1}
+            else {
+                 $t=rand()/1000
+                 if ($t>0&&$t<2){pole[$i,$j]=1}
+                 if ($t>3&&$t<10){pole[$i,$j]=3}
+             }}
+
+            $j=$j+1
+        }
+        $i=$i+1
+    }
+}
+
+fn botIni(){
+    clear(RED)
+    frame(100)
+    $i=0
+    while($i<cb){
+        $j=4
+         brain[$i,0]=rand()%(polX-2)+1
+         brain[$i,1]=rand()%(polY-2)+1
+         pole[brain[$i,0],brain[$i,1]]=2
+         brain[$i,2]=100
+         brain[$i,3]=0
+         brain[$i,dnk]=rand()%4
+         while($j<dnk){
+            brain[$i,$j]=(rand()/1000)%32
+            $j=$j+1
+        }
+        $i=$i+1
+    }
+
+}
+
+
+fn printPol($_x,$_y,$scale){
+    $i=0
+    while( $i<polX){
+        $j=0
+        while ($j<polY){
+            //print(n2s(pole[$i,$j]),$i*30,$j*20,RED)
+            fbox($_x+$scale*$i,$_y+$scale*$j,$scale-1,$scale-1,colMap[pole[$i,$j]])
+            $j=$j+1
+        }
+       $i=$i+1
+    }
+}
+
+fn view($n,$x,$y){
+    fbox($x-10,$y-10,150,135,BLUE)
+    print("posX:",$x,$y,WHITE,TOP | LEFT )
+    print(n2s(brain[$n,0]),$x+40,$y,WHITE,TOP | LEFT )
+    print("posY:",$x+70,$y,WHITE,TOP | LEFT )
+    print(n2s(brain[$n,1]),$x+70+40,$y,WHITE,TOP | LEFT )
+    print("hial:",$x,$y+20,WHITE,TOP | LEFT )
+    print(n2s(brain[$n,2]),$x+40,$y+20,WHITE,TOP | LEFT )
+    print("angl:",$x+70,$y+20,WHITE,TOP | LEFT )
+    print(n2s(brain[$n,dnk]),$x+40+70,$y+20,WHITE,TOP | LEFT )
+    print("pointer:",$x,$y+40,WHITE,TOP | LEFT )
+    print(n2s(brain[$n,3]),$x+70,$y+40,WHITE,TOP | LEFT )
+    $i=0
+    $c=4
+    while $i<6{
+        $j=0
+        while $j<6{
+             if( brain[$n,3] == $c-4){
+                 print(n2s(brain[$n,$c]),10+$x+20*$j,60+$y+10*$i,RED,TOP | LEFT)
+             }else {
+                 print(n2s(brain[$n,$c]),10+$x+20*$j,60+$y+10*$i,WHITE,TOP | LEFT )
+             }
+             $c=$c+1
+             $j=$j+1
+        }
+        $i=$i+1
+    }
+}
+
+fn n2s( $n )
+ {
+  $s=""
+  num2str( $s, $n )
+  ret( $s)
+ } 
